@@ -101,27 +101,44 @@ function App() {
         { role: 'user', content: userMsgContent }
       ];
 
-      // 3. Call Nvidia API via Vite Proxy
-      const response = await fetch('/api/nvidia/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_NVIDIA_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'meta/llama-3.1-70b-instruct',
-          messages: apiMessages,
-          temperature: 0.7,
-          max_tokens: 1024,
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Nvidia API error: ${response.status} ${response.statusText}`);
+      // 3. Call API (Local proxy for Dev, Secure Vercel Function for Prod)
+      let response;
+      if (import.meta.env.DEV) {
+        response = await fetch('/api/nvidia/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_NVIDIA_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'meta/llama-3.1-70b-instruct',
+            messages: apiMessages,
+            temperature: 0.7,
+            max_tokens: 1024,
+          })
+        });
+      } else {
+        response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ messages: apiMessages })
+        });
       }
 
       const resData = await response.json();
-      const assistantMsgContent = resData.choices[0]?.message?.content || 'Sorry, I couldn\'t formulate a response.';
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${resData.error || response.statusText}`);
+      }
+
+      let assistantMsgContent = 'Sorry, I couldn\'t formulate a response.';
+      if (resData.error) {
+        assistantMsgContent = `Backend Error: ${resData.error}`;
+      } else if (resData.choices?.[0]?.message?.content) {
+        assistantMsgContent = resData.choices[0].message.content;
+      }
 
       // 4. Save assistant response to Supabase
       const { data: savedAssistantMsg, error: supabaseError } = await supabase.from('chats').insert({
