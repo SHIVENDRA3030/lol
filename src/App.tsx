@@ -14,14 +14,9 @@ interface ChatMessage {
   created_at?: string;
 }
 
-// Generate or retrieve session ID
+// Use a universal session ID for global, public chat syncing
 const getSessionId = () => {
-  let sessionId = localStorage.getItem('chat_session_id');
-  if (!sessionId) {
-    sessionId = crypto.randomUUID();
-    localStorage.setItem('chat_session_id', sessionId);
-  }
-  return sessionId;
+  return 'global-public-chat-room';
 };
 
 function App() {
@@ -176,9 +171,8 @@ function App() {
 
       {/* Main Content */}
       <main
-        className={`flex-1 px-4 md:px-6 lg:px-8 py-6 flex flex-col gap-6 bg-slate-50/50 ${
-          isChatGptView ? 'overflow-hidden' : 'overflow-y-auto'
-        }`}
+        className={`flex-1 px-4 md:px-6 lg:px-8 py-6 flex flex-col gap-6 bg-slate-50/50 ${isChatGptView ? 'overflow-hidden' : 'overflow-y-auto'
+          }`}
       >
         {isChatGptView ? (
           <div className="flex h-full w-full flex-col gap-3">
@@ -206,7 +200,7 @@ function App() {
                 <Bot size={48} className="mb-4 text-emerald-600/50" />
                 <p className="text-lg font-medium text-slate-700">How can I help you today?</p>
                 <p className="text-sm text-slate-500 max-w-sm mt-2">
-                  Messages are saved directly to Supabase tied to your unique browser session.
+                  This is a global, public chat room. All users share this conversational history.
                 </p>
               </div>
             )}
