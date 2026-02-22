@@ -14,6 +14,18 @@ interface ChatMessage {
   created_at?: string;
 }
 
+// Simple UUID fallback for non-secure iframe contexts where crypto.randomUUID is undefined
+const generateUUID = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 // Use a universal session ID for global, public chat syncing
 const getSessionId = () => {
   // Supabase expects a valid UUID for the column, so we use the zero-UUID
@@ -70,7 +82,7 @@ function App() {
     setIsLoading(true);
 
     // Optimistic UI update for user message
-    const tempUserId = crypto.randomUUID();
+    const tempUserId = generateUUID();
     const newUserMsg: ChatMessage = { id: tempUserId, role: 'user', content: userMsgContent };
     setMessages(prev => [...prev, newUserMsg]);
 
@@ -126,7 +138,7 @@ function App() {
       if (savedAssistantMsg) {
         setMessages(prev => [...prev, savedAssistantMsg as ChatMessage]);
       } else {
-        setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: assistantMsgContent }]);
+        setMessages(prev => [...prev, { id: generateUUID(), role: 'assistant', content: assistantMsgContent }]);
       }
 
     } catch (error: any) {
@@ -136,7 +148,7 @@ function App() {
         errMsg = 'Failed to connect to the API. This might be a CORS issue or network offline.';
       }
       setMessages(prev => [...prev, {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         role: 'assistant',
         content: `Error: ${errMsg}`
       }]);
