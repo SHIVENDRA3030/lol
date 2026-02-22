@@ -16,7 +16,8 @@ interface ChatMessage {
 
 // Use a universal session ID for global, public chat syncing
 const getSessionId = () => {
-  return 'global-public-chat-room';
+  // Supabase expects a valid UUID for the column, so we use the zero-UUID
+  return '00000000-0000-0000-0000-000000000000';
 };
 
 function App() {
